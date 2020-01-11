@@ -118,7 +118,7 @@ public inherited sharing class AccountTriggerHandler {
 
         // Initialize an empty list of modified accounts so we don't update all of them.
 
-        List<Account> modifiedAccounts = new List<Account>();
+        List<Account> accountsWithoutTerritory = new List<Account>();
 
         // Knowing which territories we are using, and having a map of accounts per territory,
         // we'll improve the performance of a nested loop, and just check if the accounts
@@ -138,11 +138,17 @@ public inherited sharing class AccountTriggerHandler {
                     // a master-detail. The contact's owner will be the same of the account's.
 
                     record.OwnerId = territoryRecord.OwnerId;
-
-                    modifiedAccounts.add(record);
                 }
+            } else {
+
+                // If the territory doesn't exist, we should assign the accounts randomly as per
+                // requirement #3
+
+                accountsWithoutTerritory.addAll(accountsByTerritory.get(territoryRecord.Name));
             }
         }
+
+        randomOwnerAssignment(accountsWithoutTerritory);
 
         // We now have the list of our modified accounts. If the owner changes, all the open opportunities
         // have to be transfered as well. We won't do this here. We'll write another method in our
@@ -247,6 +253,33 @@ public inherited sharing class AccountTriggerHandler {
 
         // Update opportunities that now have a new owner.
         update modifiedOpportunitites;
+    }
+
+    /**
+     * Assign randomly the accounts.
+     */
+    private void randomOwnerAssignment(List<Account> accounts) {
+
+        if (accounts == null || accounts.isEmpty()) {
+            return;
+        }
+
+        // Let's get the list of active users (excluding the current user).
+
+        List<User> availableUsers = [
+            SELECT Id
+            FROM User
+            WHERE IsActive = TRUE
+            AND Id != :UserInfo.getUserId()
+        ];
+
+        // Randomly assign the accounts to the users
+
+        for (Account record : accounts) {
+            User luckyUser = availableUsers.get(Math.round(Math.random() * (availableUsers.size() - 1)));
+            System.debug(LoggingLevel.INFO, 'Lucky user ' + luckyUser.Id + ' has been choosen by destiny to be the owner of account ' + record.Id);
+            record.OwnerId = luckyUser.Id;
+        }
     }
 
     /**
