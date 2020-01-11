@@ -250,6 +250,17 @@ public inherited sharing class AccountTriggerHandler {
     }
 
     /**
+     * Assign randomly the accounts.
+     */
+    private void randomAssignment(List<Account> accounts) {
+        List<User> availableUsers = [SELECT Id FROM User WHERE IsActive = TRUE];
+
+        for (Account record : accounts) {
+            record.OwnerId = availableUsers.get(Math.round(Math.random() * (availableUsers.size() - 1)));
+        }
+    }
+
+    /**
      * This inner class adds a little bit of OOP to the code. I'll be using this to store the account
      * and the previous and new owner. We'll need this to query the opportunities.
      */

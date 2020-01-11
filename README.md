@@ -35,3 +35,9 @@ The first thing to consider here is whether you can solve this with declarative 
 We'll want a trigger on the account object to check if the zip code is changed. We are talking pre-commit logic here, so ideally this will be put on `before insert` and `before update` contexts. No need to worry about the `after` context for now. The `Owner` will be set on the `before` context so we don't need to issue another DML to update the record (it is read-only in the `after` context anyway).
 
 We don't need to change the contact's OwnerId because the Contact relationship with the related Account record is _Master-Detail_. Therefore, the Account's owner will automatically be the same as the related contacts.
+
+## Requirement #3
+
+_Multiple sales representatives can be assigned to the same zip code territory. If this is the case, use a random function to select one of the assigned sales representatives_
+
+Now this changes a bit the assignment process. We'll need to query the available users and randomly assign then. It isn't explicit if we should query users with a given profile, role, permission set or custom permission. For now, we'll query all active users. One can change the requirements as necessary in a real scenario.
