@@ -18,7 +18,7 @@
 2. Change the Owner field of all the Account’s Contacts to the same sales rep
 3. Change the Owner field of all the Account’s Open Opportunities to the same sales rep
 
-# Exaplanation
+# Explanation
 
 ## Requirement #1
 
@@ -41,3 +41,9 @@ We don't need to change the contact's OwnerId because the Contact relationship w
 _Multiple sales representatives can be assigned to the same zip code territory. If this is the case, use a random function to select one of the assigned sales representatives_
 
 Now this changes a bit the assignment process. We'll need to query the available users and randomly assign then. It isn't explicit if we should query users with a given profile, role, permission set or custom permission. For now, we'll query all active users. One can change the requirements as necessary in a real scenario.
+
+## Requirement #4
+
+_Three sales representatives at most can be assigned to a single zip code. Display an error if a user attempts to associate another sales representative to a zip code._
+
+The assignment tells us to check if a user is trying to own more than three `Territory__c` records. We'll create a validation logic on a new trigger handler, on the custom territory object. Instead of querying all the related records and all the users, we'll use aggregation to get the territory count per user using the `AggregateResult` query result object.
