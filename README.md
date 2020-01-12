@@ -72,3 +72,7 @@ For this I'll have to change the account's trigger to include this field trackin
 ## Requirement #7
 
 _If a `Territory__c` record’s sales representative is changed (and only when it is changed), repeat Requirement #2’s logic for all Accounts associated with the Territory._
+
+So when a territory is assigned to a different user, change the property of the related accounts to that new owner. Again, no need to change the contact's owner. And change the opportunities owners as well.
+
+We don't actually need to change the opportunities' owners because the account trigger will handle that for us when we change the account's owner. The `handleOwnershipChange` method inside the account trigger handler does that for us already. We just need to handle the territory change.
