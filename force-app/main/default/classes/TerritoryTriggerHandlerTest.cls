@@ -151,6 +151,34 @@ private class TerritoryTriggerHandlerTest {
         Test.stopTest();
     }
 
+    @IsTest
+    static void testAccountTransferWhenTerritoryOwnerChanges() {
+        Map<String, User> users = TerritoryTriggerHandlerTest.getUsersByName();
+
+        System.runAs(users.get('Blake')) {
+            Territory__c blakesTerritory = new Territory__c(
+                Name = '00001'
+            );
+            insert blakesTerritory;
+
+            Account coolMotors = new Account(
+                Name = 'Cool Motors, Inc',
+                BillingPostalCode = blakesTerritory.Name
+            );
+            insert coolMotors;
+
+            blakesTerritory.OwnerId = users.get('Aaron').Id;
+
+            Test.startTest();
+            update blakesTerritory;
+            Test.stopTest();
+        }
+
+        Account coolMotors = [SELECT Id, OwnerId FROM Account WHERE Name = 'Cool Motors, Inc'];
+
+        System.assertEquals(users.get('Aaron').Id, coolMotors.OwnerId, 'Aaron should be the new owner of the account since the territory was transfered to him.');
+    }
+
     private static Map<String, User> getUsersByName() {
         Map<String, User> users = new Map<String, User>();
         for (User u : [
