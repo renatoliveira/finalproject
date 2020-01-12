@@ -7,6 +7,7 @@ public inherited sharing class AccountTriggerHandler {
     public void run() {
         handleOwnershipChange();
         handleZipCodeChange();
+        handleRecordHistory();
     }
 
     private void handleZipCodeChange() {
@@ -279,6 +280,88 @@ public inherited sharing class AccountTriggerHandler {
             User luckyUser = availableUsers.get(Math.round(Math.random() * (availableUsers.size() - 1)));
             System.debug(LoggingLevel.INFO, 'Lucky user ' + luckyUser.Id + ' has been choosen by destiny to be the owner of account ' + record.Id);
             record.OwnerId = luckyUser.Id;
+        }
+    }
+
+    private void handleRecordHistory() {
+
+        // To properly handle the history records we'll check the record on the `after update` context
+        // because in this context it is in read-only mode, and thus can not be modified by other
+        // trigger logic.
+
+        if (Trigger.isExecuting && Trigger.isAfter && (Trigger.isUpdate || Trigger.isInsert)) {
+
+            Map<Id, Account> previousVersionsOfTheAccountRecords;
+
+            if (Trigger.isUpdate) {
+                previousVersionsOfTheAccountRecords = (Map<Id, Account>) Trigger.oldMap;
+            }
+
+            Set<String> zipCodes = new Set<String>();
+
+            for (Account record : (List<Account>) Trigger.new) {
+
+                if (Trigger.isUpdate &&
+                    previousVersionsOfTheAccountRecords.containsKey(record.Id) &&
+                    previousVersionsOfTheAccountRecords.get(record.Id).BillingPostalCode != record.BillingPostalCode) {
+
+                    Account oldVersion = previousVersionsOfTheAccountRecords.get(record.Id);
+                    zipCodes.add(record.BillingPostalCode);
+                    zipCodes.add(oldVersion.BillingPostalCode);
+
+                } else if (Trigger.isInsert) {
+
+                    zipCodes.add(record.BillingPostalCode);
+                }
+            }
+
+            List<Territory__c> relatedTerritories = [
+                SELECT
+                Id, Name
+                FROM Territory__c
+                WHERE Name IN :zipCodes
+            ];
+
+            Map<String, Territory__c> territoriesByZipCode = new Map<String, Territory__c>();
+
+            for (Territory__c t : relatedTerritories) {
+                territoriesByZipCode.put(t.Name, t);
+            }
+
+            List<Assignment_History__c> history = new List<Assignment_History__c>();
+
+            for (Account record : (List<Account>) Trigger.new) {
+
+                if (Trigger.isUpdate && previousVersionsOfTheAccountRecords.containsKey(record.Id)) {
+
+                    Account oldVersion = previousVersionsOfTheAccountRecords.get(record.Id);
+
+                    history.add(new Assignment_History__c(
+                        Account__c = record.Id,
+                        NewTerritory__c = territoriesByZipCode.containsKey(record.BillingPostalCode) ? territoriesByZipCode.get(record.BillingPostalCode).Id : null,
+                        PreviousTerritory__c = territoriesByZipCode.containsKey(oldVersion.BillingPostalCode) ? territoriesByZipCode.get(oldVersion.BillingPostalCode).Id : null,
+                        NewOwner__c = record.OwnerId,
+                        PreviousOwner__c = oldVersion.OwnerId
+                    ));
+
+                } else if (Trigger.isInsert) {
+
+                    // The requirement tells us that all field should be populated, but when the account is inserted the
+                    // fields values for "previous [owner|territory]" are empty/null. I'm going to fill them with the
+                    // most recent value (history record will represent an insert or "no change").
+
+                    history.add(new Assignment_History__c(
+                        Account__c = record.Id,
+                        NewTerritory__c = territoriesByZipCode.containsKey(record.BillingPostalCode) ? territoriesByZipCode.get(record.BillingPostalCode).Id : null,
+                        PreviousTerritory__c = territoriesByZipCode.containsKey(record.BillingPostalCode) ? territoriesByZipCode.get(record.BillingPostalCode).Id : null,
+                        NewOwner__c = record.OwnerId,
+                        PreviousOwner__c = record.OwnerId
+                    ));
+
+                }
+            }
+
+            insert history;
         }
     }
 

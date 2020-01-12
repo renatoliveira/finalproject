@@ -47,3 +47,28 @@ Now this changes a bit the assignment process. We'll need to query the available
 _Three sales representatives at most can be assigned to a single zip code. Display an error if a user attempts to associate another sales representative to a zip code._
 
 The assignment tells us to check if a user is trying to own more than three `Territory__c` records. We'll create a validation logic on a new trigger handler, on the custom territory object. Instead of querying all the related records and all the users, we'll use aggregation to get the territory count per user using the `AggregateResult` query result object.
+
+## Requirements #5
+
+_Create an Assignment History custom object with the following fields:_
+
+|Field name|Field type|Description|
+|---|---|---|
+|Previous Owner|Lookup (User)|The prior sales rep assigned to this Account|
+|New Owner|Lookup (User)|The new sales rep assigned to this Account|
+|Previous Territory|Lookup (Territory__c)|The matching Territory__c record for the prior zip code|
+|New Territory|Lookup (Territory__c)|The matching Territory__c record for the new zip code|
+|Account|Master-Detail (Account)|The related Account record|
+|Changed By|Lookup (User)|The user who changed the BillingPostalCode|
+
+I am not creating the `Changed By` field because the record will be created by the user performing the operation. So the standard `CreatedById` field will be always available as a lookup to the user who made the change
+
+## Requirement #6
+
+_Create an `Assignment_History__c` record whenever an Account’s BillingPostalCode is changed or populated for the first time. All fields should be populated._
+
+For this I'll have to change the account's trigger to include this field tracking. Since the requirement is to do this when changed or populated for the first time, this means an `update` and `insert` logic. All fields should be populated since when the zip code changes the owner will also change.
+
+## Requirement #7
+
+_If a `Territory__c` record’s sales representative is changed (and only when it is changed), repeat Requirement #2’s logic for all Accounts associated with the Territory._

@@ -80,6 +80,29 @@ private class AccountTriggerHandlerTest {
             WHERE OwnerId = :users.get('Jacqueline').Id
         ];
 
+        // We can also test for the assignment history
+        // I'm ordering the history by the new territory field because the insert operation will
+        // result in a history record with this field as null. This will help getting the correct
+        // assertion done below (getting the index right).
+
+        List<Assignment_History__c> history = [
+            SELECT
+            PreviousOwner__c,
+            NewOwner__c,
+            PreviousTerritory__c,
+            NewTerritory__c
+            FROM Assignment_History__c
+            WHERE Account__c IN (SELECT Id FROM Account WHERE Name = :accountName)
+            ORDER BY NewTerritory__c ASC NULLS FIRST
+        ];
+
+        System.assertEquals(2, history.size(), 'The history should be present for the insert and update operations that were run.');
+
+        // Now that we know the history has two entries, we can safely access them with [0] and [1]:
+
+        System.assertEquals(null, history[0].NewTerritory__c, 'The new territory for the first history entry should be null.');
+        System.assertEquals(jaquelinesTerritory.Id, history[1].NewTerritory__c, 'The new territory for the second history entry should be ' + jaquelinesTerritory.Name);
+
         System.assertEquals(1, jaquelinesAccounts.size(), 'Jaqueline should have an account assigned to her.');
         System.assertEquals(accountName, jaquelinesAccounts[0].Name, 'It should be the Cool Motors account.');
     }
