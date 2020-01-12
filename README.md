@@ -76,3 +76,17 @@ _If a `Territory__c` record’s sales representative is changed (and only when i
 So when a territory is assigned to a different user, change the property of the related accounts to that new owner. Again, no need to change the contact's owner. And change the opportunities owners as well.
 
 We don't actually need to change the opportunities' owners because the account trigger will handle that for us when we change the account's owner. The `handleOwnershipChange` method inside the account trigger handler does that for us already. We just need to handle the territory change.
+
+## Requirement #8 and conclusion
+
+I'm not going to handle the challenges. At the end of this solution, code coverage is above 90%, as per requirement 8:
+
+```
+=== Apex Code Coverage
+ID                  NAME                     % COVERED  UNCOVERED LINES
+──────────────────  ───────────────────────  ─────────  ───────────────────────────────────
+01pP0000001yK2XIAU  TerritoryTriggerHandler  98%        70
+01qP00000001f7bIAA  CustomTerritory          100%
+01pP0000001yIp9IAE  AccountTriggerHandler    93%        148,246,249,251,270,274,279,280,282
+01qP00000001f6OIAQ  Account                  100%
+```
