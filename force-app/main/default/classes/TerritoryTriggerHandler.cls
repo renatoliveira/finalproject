@@ -5,11 +5,13 @@ public inherited sharing class TerritoryTriggerHandler {
     }
 
     public void run() {
-        if (Trigger.isBefore) {
-            validateAssignment();
-        }
+        validateAssignment();
     }
 
+    /**
+     * Chechks if the user can have the territory assigned to them. They can't have more than
+     * three territories assigned.
+     */
     private void validateAssignment() {
         if (Trigger.isExecuting && Trigger.isBefore && (Trigger.isInsert || Trigger.isUpdate)) {
 
